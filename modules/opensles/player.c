@@ -99,9 +99,11 @@ static int createPlayer(struct auplay_st *st, struct auplay_prm *prm)
 		SL_DATALOCATOR_OUTPUTMIX, st->outputMixObject
 	};
 	SLDataSink audioSnk = {&loc_outmix, NULL};
-	const SLInterfaceID ids[2] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND};
-	const SLboolean req[2] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
+	const SLInterfaceID ids[4] = {SL_IID_ANDROIDCONFIGURATION, SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
+	const SLboolean req[4] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
 	SLresult r;
+	SLAndroidConfigurationItf playerConfig;
+	SLint32 streamType = SL_ANDROID_STREAM_VOICE;
 
 	r = (*engineEngine)->CreateAudioPlayer(engineEngine,
 					       &st->bqPlayerObject,
@@ -111,6 +113,18 @@ static int createPlayer(struct auplay_st *st, struct auplay_prm *prm)
 		warning("opensles: CreateAudioPlayer error: r = %d\n", r);
 		return ENODEV;
 	}
+
+	r = (*st->bqPlayerObject)->GetInterface(st->bqPlayerObject,
+						SL_IID_ANDROIDCONFIGURATION,
+						&playerConfig);
+	if (SL_RESULT_SUCCESS != r)
+		return ENODEV;
+
+ 	r = (*playerConfig)->SetConfiguration(playerConfig,
+     					SL_ANDROID_KEY_STREAM_TYPE,
+     					&streamType, sizeof(SLint32));
+	if (SL_RESULT_SUCCESS != r)
+		return ENODEV;
 
 	r = (*st->bqPlayerObject)->Realize(st->bqPlayerObject,
 					   SL_BOOLEAN_FALSE);
